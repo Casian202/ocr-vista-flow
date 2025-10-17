@@ -17,17 +17,17 @@ Flask expus prin Gunicorn.
 ### 1. Backend
 
 ```bash
-cd backend
-python -m venv .venv
+./scripts/setup_backend.sh   # creează mediul virtual și instalează dependențele
 source .venv/bin/activate
-pip install --upgrade pip
-pip install -r requirements.txt
-cp .env.example .env  # actualizează valorile după nevoie
-python -m backend.app.main  # pornește serverul pe http://127.0.0.1:8000
+python -m backend.app.main   # pornește serverul pe http://127.0.0.1:8000
 ```
 
-Backend-ul creează directoarele necesare în folderul `data/` și initializează
-automat baza de date SQLite definită în `DATABASE_URL`.
+Scriptul `scripts/setup_backend.sh` rulează aceiași pași necesari pentru
+configurarea backend-ului (crearea mediului virtual, instalarea dependențelor și
+copierea fișierului `.env` dacă lipsește), evitând erorile întâlnite pe sisteme
+Debian/Ubuntu configurate cu PEP 668. Backend-ul creează directoarele necesare
+în folderul `data/` și initializează automat baza de date SQLite definită în
+`DATABASE_URL`.
 
 ### 2. Frontend
 
@@ -45,12 +45,9 @@ către backend prin `/api`.
 2. **Creează un mediu virtual Python** și instalează dependențele:
 
    ```bash
-   cd /opt/ocr-vista-flow/backend
-   python -m venv ../.venv
-   source ../.venv/bin/activate
-   pip install --upgrade pip
-   pip install -r requirements.txt
-   cp .env.example .env  # setează MISTRAL_API_KEY, DATABASE_URL etc.
+   cd /opt/ocr-vista-flow
+   ./scripts/setup_backend.sh
+   source .venv/bin/activate
    ```
 
 3. **Construiește frontend-ul și publică-l într-un director servit de Nginx**:
