@@ -4,10 +4,11 @@ import json
 import logging
 import time
 from concurrent.futures import ThreadPoolExecutor
+from dataclasses import dataclass
 from pathlib import Path
-from typing import Any
+from typing import Any, Callable
 
-from flask import Blueprint, Flask, abort, jsonify, make_response, request, send_file
+from flask import Flask, abort, jsonify, make_response, request, send_file
 from flask_cors import CORS
 from pydantic import ValidationError
 from werkzeug.utils import secure_filename
@@ -62,51 +63,59 @@ def parse_model(model_cls, payload: dict[str, Any]):
         abort(json_response({"detail": exc.errors()}, 400))
 
 
-api_router = Blueprint("api", __name__)
+@dataclass(frozen=True)
+class RouteDefinition:
+    rule: str
+    methods: tuple[str, ...]
+    view_func: Callable[..., Any]
+
+
+ROUTES: list[RouteDefinition] = []
+
+
+def _normalize_rule(rule: str) -> str:
+    if not rule:
+        return "/"
+    normalized = rule if rule.startswith("/") else f"/{rule}"
+    if normalized != "/":
+        normalized = normalized.rstrip("/")
+    return normalized or "/"
 
 
 def route(rule: str, *, methods: list[str]):
-    """Register a route on the API blueprint.
+    """Register a route definition for later attachment to the Flask app."""
 
-    Flask's convenience methods like ``Blueprint.get`` require Flask >=2.0, but
-    some deployment environments might ship older patch releases which only
-    expose ``route``. To keep compatibility predictable we register endpoints
-    through a small helper that always calls ``add_url_rule`` directly.
-    """
+    normalized_rule = _normalize_rule(rule)
 
-    normalized_rule = rule if rule == "/" else rule.rstrip("/")
-
-    def decorator(func):
-        api_router.add_url_rule(
-            normalized_rule,
-            view_func=func,
-            methods=methods,
-            strict_slashes=False,
-        )
+    def decorator(func: Callable[..., Any]):
+        ROUTES.append(RouteDefinition(normalized_rule, tuple(methods), func))
         return func
 
     return decorator
 
 
-class PrefixFallbackMiddleware:
-    """Route requests missing the configured prefix to the API blueprint."""
+def _register_routes(app: Flask, prefix: str) -> None:
+    for definition in ROUTES:
+        endpoint_base = definition.view_func.__name__
+        root_endpoint = f"{endpoint_base}_root_{id(app)}"
+        app.add_url_rule(
+            definition.rule,
+            endpoint=root_endpoint,
+            view_func=definition.view_func,
+            methods=list(definition.methods),
+            strict_slashes=False,
+        )
 
-    def __init__(self, app, prefix: str):
-        self.app = app
-        self.prefix = prefix.rstrip("/") if prefix else ""
-
-    def __call__(self, environ, start_response):
-        if not self.prefix:
-            return self.app(environ, start_response)
-
-        path = environ.get("PATH_INFO", "") or ""
-        if not path or path == "/" or path.startswith(self.prefix):
-            return self.app(environ, start_response)
-
-        adjusted = f"{self.prefix}{path if path.startswith('/') else '/' + path}"
-        updated_environ = environ.copy()
-        updated_environ["PATH_INFO"] = adjusted
-        return self.app(updated_environ, start_response)
+        if prefix:
+            prefixed_rule = prefix if definition.rule == "/" else f"{prefix}{definition.rule}"
+            prefixed_endpoint = f"{endpoint_base}_prefixed_{id(app)}"
+            app.add_url_rule(
+                prefixed_rule,
+                endpoint=prefixed_endpoint,
+                view_func=definition.view_func,
+                methods=list(definition.methods),
+                strict_slashes=False,
+            )
 
 
 @route("/health", methods=["GET"])
@@ -361,10 +370,7 @@ def create_app() -> Flask:
     ensure_storage_dirs(settings.data_dir)
     documents_dir()
 
-    app.register_blueprint(api_router, url_prefix=settings.api_prefix)
-
-    if settings.api_prefix:
-        app.wsgi_app = PrefixFallbackMiddleware(app.wsgi_app, settings.api_prefix)
+    _register_routes(app, settings.api_prefix)
 
     return app
 
