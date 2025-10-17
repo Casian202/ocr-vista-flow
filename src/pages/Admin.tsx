@@ -1,12 +1,15 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
 import { Settings, Users } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
+import { getJSON, postJSON } from "@/lib/api";
+import type { OCREngineSetting } from "@/types/settings";
 
 const users = [
   { id: 1, username: "Casian202", status: "approved" },
@@ -27,12 +30,36 @@ const menuPermissions = [
 ];
 
 export default function Admin() {
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
   const [selectedUser, setSelectedUser] = useState("casian202");
-  const [selectedEngine, setSelectedEngine] = useState("docling");
+  const [selectedEngine, setSelectedEngine] = useState<"docling" | "ocrmypdf">("docling");
+
+  const { data: engineSetting, isLoading: isLoadingEngine } = useQuery({
+    queryKey: ["ocr-engine"],
+    queryFn: () => getJSON<OCREngineSetting>("/settings/ocr-engine"),
+  });
+
+  useEffect(() => {
+    if (engineSetting?.engine) {
+      setSelectedEngine(engineSetting.engine);
+    }
+  }, [engineSetting]);
+
+  const updateEngineMutation = useMutation({
+    mutationFn: (engine: "docling" | "ocrmypdf") =>
+      postJSON<OCREngineSetting>("/settings/ocr-engine", { engine }),
+    onSuccess: (data) => {
+      queryClient.setQueryData(["ocr-engine"], data);
+      toast({ title: "Setare salvată", description: `Motorul implicit este acum ${data.engine}.` });
+    },
+    onError: (error: Error) => {
+      toast({ title: "Nu s-a putut salva", description: error.message, variant: "destructive" });
+    },
+  });
 
   return (
     <div className="animate-fade-in space-y-6">
-      {/* Header */}
       <div>
         <h1 className="text-3xl font-bold">Consolă administrator</h1>
         <p className="text-muted-foreground mt-1">
@@ -41,20 +68,21 @@ export default function Admin() {
       </div>
 
       <div className="grid gap-6">
-        {/* OCR Engine Settings */}
         <Card className="bg-gradient-card shadow-medium border-border/50">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Settings className="h-5 w-5" />
               Setări motor OCR
             </CardTitle>
-            <CardDescription>Motorul curent: {selectedEngine === "docling" ? "Docling" : "OCRmyPDF"}</CardDescription>
+            <CardDescription>
+              Motorul curent: {selectedEngine === "docling" ? "Docling" : "OCRmyPDF"}
+            </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="space-y-2">
               <Label htmlFor="ocr-engine">Motor OCR implicit:</Label>
-              <Select value={selectedEngine} onValueChange={setSelectedEngine}>
-                <SelectTrigger id="ocr-engine">
+              <Select value={selectedEngine} onValueChange={(value) => setSelectedEngine(value as "docling" | "ocrmypdf")}>
+                <SelectTrigger id="ocr-engine" disabled={isLoadingEngine || updateEngineMutation.isPending}>
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent className="bg-popover z-50">
@@ -63,19 +91,21 @@ export default function Admin() {
                 </SelectContent>
               </Select>
               <p className="text-xs text-muted-foreground">
-                Selectează un motorul implicit folosit pentru OCR.
+                Selectează motorul implicit folosit pentru OCR. Modificarea se aplică imediat tuturor procesărilor noi.
               </p>
             </div>
 
-            <Button className="bg-primary hover:bg-primary/90">
-              Salvează setarea
+            <Button
+              className="bg-primary hover:bg-primary/90"
+              onClick={() => updateEngineMutation.mutate(selectedEngine)}
+              disabled={updateEngineMutation.isPending}
+            >
+              {updateEngineMutation.isPending ? "Se salvează..." : "Salvează setarea"}
             </Button>
           </CardContent>
         </Card>
 
-        {/* User Management */}
         <div className="grid gap-6 lg:grid-cols-2">
-          {/* Users List */}
           <Card className="bg-gradient-card shadow-medium border-border/50">
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
@@ -96,7 +126,7 @@ export default function Admin() {
                     }`}
                   >
                     <span className="font-medium">{user.username}</span>
-                    <Badge 
+                    <Badge
                       variant="secondary"
                       className="bg-green-500/10 text-green-600 hover:bg-green-500/20"
                     >
@@ -108,7 +138,6 @@ export default function Admin() {
             </CardContent>
           </Card>
 
-          {/* Edit User */}
           <Card className="bg-gradient-card shadow-medium border-border/50">
             <CardHeader>
               <CardTitle>Editează: {selectedUser}</CardTitle>
@@ -141,16 +170,14 @@ export default function Admin() {
 
               <div className="space-y-2">
                 <Label htmlFor="user-notes">Notes:</Label>
-                <Textarea 
-                  id="user-notes" 
-                  placeholder="Adaugă notițe despre utilizator..." 
+                <Textarea
+                  id="user-notes"
+                  placeholder="Adaugă notițe despre utilizator..."
                   className="min-h-[100px]"
                 />
               </div>
 
-              <Button className="w-full bg-primary hover:bg-primary/90">
-                Salvează
-              </Button>
+              <Button className="w-full bg-primary hover:bg-primary/90">Salvează</Button>
             </CardContent>
           </Card>
         </div>
