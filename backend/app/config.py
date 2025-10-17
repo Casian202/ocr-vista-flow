@@ -2,6 +2,7 @@ from functools import lru_cache
 from pathlib import Path
 from typing import List
 
+from pydantic import model_validator
 from pydantic_settings import BaseSettings
 
 
@@ -15,6 +16,17 @@ class Settings(BaseSettings):
         "http://localhost:8080",
     ]
     api_prefix: str = "/api"
+
+    @model_validator(mode="after")
+    def normalize_prefix(self) -> "Settings":
+        prefix = (self.api_prefix or "").strip()
+        if not prefix or prefix == "/":
+            self.api_prefix = ""
+            return self
+
+        normalized = "/" + prefix.strip("/")
+        self.api_prefix = normalized
+        return self
 
     class Config:
         env_file = ".env"
