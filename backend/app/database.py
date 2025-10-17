@@ -1,6 +1,7 @@
 from contextlib import contextmanager
 from typing import Iterator
 
+from sqlalchemy.exc import OperationalError
 from sqlmodel import Session, SQLModel, create_engine
 
 from .config import get_settings
@@ -12,7 +13,11 @@ engine = create_engine(str(settings.database_url), connect_args=connect_args, ec
 
 
 def init_db() -> None:
-    SQLModel.metadata.create_all(engine)
+    try:
+        SQLModel.metadata.create_all(engine, checkfirst=True)
+    except OperationalError as exc:  # pragma: no cover - defensive branch
+        if "already exists" not in str(exc).lower():
+            raise
 
 
 @contextmanager
