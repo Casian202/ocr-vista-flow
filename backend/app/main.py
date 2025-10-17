@@ -65,12 +65,28 @@ def parse_model(model_cls, payload: dict[str, Any]):
 api_router = Blueprint("api", __name__)
 
 
-@api_router.get("/health")
+def route(rule: str, *, methods: list[str]):
+    """Register a route on the API blueprint.
+
+    Flask's convenience methods like ``Blueprint.get`` require Flask >=2.0, but
+    some deployment environments might ship older patch releases which only
+    expose ``route``. To keep compatibility predictable we register endpoints
+    through a small helper that always calls ``add_url_rule`` directly.
+    """
+
+    def decorator(func):
+        api_router.add_url_rule(rule, view_func=func, methods=methods)
+        return func
+
+    return decorator
+
+
+@route("/health", methods=["GET"])
 def health() -> Any:
     return json_response({"status": "ok"})
 
 
-@api_router.get("/settings/ocr-engine")
+@route("/settings/ocr-engine", methods=["GET"])
 def get_ocr_engine() -> Any:
     with get_session() as session:
         engine_value = get_default_engine(session)
@@ -78,7 +94,7 @@ def get_ocr_engine() -> Any:
     return json_response(response.model_dump())
 
 
-@api_router.post("/settings/ocr-engine")
+@route("/settings/ocr-engine", methods=["POST"])
 def update_ocr_engine() -> Any:
     payload = request.get_json(silent=True) or {}
     data = parse_model(SettingUpdate, payload)
@@ -89,7 +105,7 @@ def update_ocr_engine() -> Any:
     return json_response(SettingResponse(engine=data.engine).model_dump())
 
 
-@api_router.get("/ocr/jobs")
+@route("/ocr/jobs", methods=["GET"])
 def list_ocr_jobs() -> Any:
     with get_session() as session:
         statement = select(OCRJob).order_by(OCRJob.created_at.desc())
@@ -98,7 +114,7 @@ def list_ocr_jobs() -> Any:
     return json_response(serialized)
 
 
-@api_router.post("/ocr/jobs")
+@route("/ocr/jobs", methods=["POST"])
 def create_ocr_job() -> Any:
     file = request.files.get("file")
     if file is None or not file.filename:
@@ -149,7 +165,7 @@ def create_ocr_job() -> Any:
         return json_response(response.model_dump(), 201)
 
 
-@api_router.get("/ocr/jobs/<int:job_id>")
+@route("/ocr/jobs/<int:job_id>", methods=["GET"])
 def get_job(job_id: int) -> Any:
     with get_session() as session:
         job = session.get(OCRJob, job_id)
@@ -159,7 +175,7 @@ def get_job(job_id: int) -> Any:
     return json_response(response.model_dump())
 
 
-@api_router.patch("/ocr/jobs/<int:job_id>")
+@route("/ocr/jobs/<int:job_id>", methods=["PATCH"])
 def update_job(job_id: int) -> Any:
     payload = request.get_json(silent=True) or {}
     data = parse_model(OCRJobUpdate, payload)
@@ -176,7 +192,7 @@ def update_job(job_id: int) -> Any:
     return json_response(response.model_dump())
 
 
-@api_router.delete("/ocr/jobs/<int:job_id>")
+@route("/ocr/jobs/<int:job_id>", methods=["DELETE"])
 def delete_job(job_id: int):
     with get_session() as session:
         job = session.get(OCRJob, job_id)
@@ -191,7 +207,7 @@ def delete_job(job_id: int):
     return ("", 204)
 
 
-@api_router.get("/ocr/jobs/<int:job_id>/download")
+@route("/ocr/jobs/<int:job_id>/download", methods=["GET"])
 def download_job(job_id: int):
     with get_session() as session:
         job = session.get(OCRJob, job_id)
@@ -210,7 +226,7 @@ def download_job(job_id: int):
     )
 
 
-@api_router.post("/word/generate")
+@route("/word/generate", methods=["POST"])
 def generate_word_document():
     payload = request.get_json(silent=True) or {}
     data = parse_model(WordGenerateRequest, payload)
@@ -224,7 +240,7 @@ def generate_word_document():
     return json_response(response.model_dump(), 201)
 
 
-@api_router.post("/word/convert")
+@route("/word/convert", methods=["POST"])
 def convert_pdf_to_word_document():
     file = request.files.get("file")
     if file is None or not file.filename:
@@ -265,7 +281,7 @@ def convert_pdf_to_word_document():
     return json_response(response.model_dump(), 201)
 
 
-@api_router.get("/word/documents")
+@route("/word/documents", methods=["GET"])
 def list_word_documents_route():
     with get_session() as session:
         documents = list_documents(session)
@@ -276,7 +292,7 @@ def list_word_documents_route():
     return json_response(serialized)
 
 
-@api_router.get("/word/documents/<int:document_id>/download")
+@route("/word/documents/<int:document_id>/download", methods=["GET"])
 def download_word_document(document_id: int):
     with get_session() as session:
         document = get_document(session, document_id)
