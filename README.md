@@ -1,73 +1,117 @@
-# Welcome to your Lovable project
+# OCR Vista Flow
 
-## Project info
+Aplicatia oferă o interfață web pentru procesarea documentelor PDF cu OCR,
+rezumarea textului folosind Mistral AI și generarea de documente Word.
+Frontend-ul este construit în React + Vite, iar backend-ul este un serviciu
+Flask expus prin Gunicorn.
 
-**URL**: https://lovable.dev/projects/4cfc416e-773b-464f-82cd-72a7b5367f01
+## Stack
 
-## How can I edit this code?
+- **Frontend:** React, TypeScript, Vite, Tailwind, @tanstack/react-query
+- **Backend:** Flask, SQLModel (SQLite), OCRmyPDF, Docling, python-docx
+- **AI:** Integrare opțională cu Mistral (`MISTRAL_API_KEY`)
+- **Reverse proxy:** Nginx
 
-There are several ways of editing your application.
+## Configurare locală
 
-**Use Lovable**
+### 1. Backend
 
-Simply visit the [Lovable Project](https://lovable.dev/projects/4cfc416e-773b-464f-82cd-72a7b5367f01) and start prompting.
+```bash
+cd backend
+python -m venv .venv
+source .venv/bin/activate
+pip install --upgrade pip
+pip install -r requirements.txt
+cp .env.example .env  # actualizează valorile după nevoie
+python -m backend.app.main  # pornește serverul pe http://127.0.0.1:8000
+```
 
-Changes made via Lovable will be committed automatically to this repo.
+Backend-ul creează directoarele necesare în folderul `data/` și initializează
+automat baza de date SQLite definită în `DATABASE_URL`.
 
-**Use your preferred IDE**
+### 2. Frontend
 
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
-
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
-
-Follow these steps:
-
-```sh
-# Step 1: Clone the repository using the project's Git URL.
-git clone <YOUR_GIT_URL>
-
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
-
-# Step 3: Install the necessary dependencies.
-npm i
-
-# Step 4: Start the development server with auto-reloading and an instant preview.
+```bash
+npm install
 npm run dev
 ```
 
-**Edit a file directly in GitHub**
+Interfața din dezvoltare va rula pe http://localhost:5173 și va face proxy
+către backend prin `/api`.
 
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
+## Deploy fără Docker (cu Nginx existent)
 
-**Use GitHub Codespaces**
+1. **Clonează proiectul pe server** (exemplu `/opt/ocr-vista-flow`).
+2. **Creează un mediu virtual Python** și instalează dependențele:
 
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
+   ```bash
+   cd /opt/ocr-vista-flow/backend
+   python -m venv ../.venv
+   source ../.venv/bin/activate
+   pip install --upgrade pip
+   pip install -r requirements.txt
+   cp .env.example .env  # setează MISTRAL_API_KEY, DATABASE_URL etc.
+   ```
 
-## What technologies are used for this project?
+3. **Construiește frontend-ul și publică-l într-un director servit de Nginx**:
 
-This project is built with:
+   ```bash
+   cd /opt/ocr-vista-flow
+   npm ci
+   npm run build
+   sudo mkdir -p /var/www/ocr-vista-flow/current
+   sudo rsync -a dist/ /var/www/ocr-vista-flow/current/
+   ```
 
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
+4. **Configurează Gunicorn prin systemd** folosind fișierul de exemplu
+   `deploy/systemd/ocr-backend.service`. Actualizează căile către depozit și
+   mediul virtual, apoi:
 
-## How can I deploy this project?
+   ```bash
+   sudo cp deploy/systemd/ocr-backend.service /etc/systemd/system/
+   sudo systemctl daemon-reload
+   sudo systemctl enable --now ocr-backend.service
+   ```
 
-Simply open [Lovable](https://lovable.dev/projects/4cfc416e-773b-464f-82cd-72a7b5367f01) and click on Share -> Publish.
+5. **Actualizează Nginx** cu `deploy/nginx.conf`. Acesta servește fișierele
+   statice din `/var/www/ocr-vista-flow/current` și face proxy către backend-ul
+   care rulează pe `127.0.0.1:8000`:
 
-## Can I connect a custom domain to my Lovable project?
+   ```bash
+   sudo cp deploy/nginx.conf /etc/nginx/sites-available/ocr-vista-flow.conf
+   sudo ln -sf /etc/nginx/sites-available/ocr-vista-flow.conf \
+       /etc/nginx/sites-enabled/ocr-vista-flow.conf
+   sudo nginx -t
+   sudo systemctl reload nginx
+   ```
 
-Yes, you can!
+6. **Actualizează aplicația** rulând din nou pașii de build pentru frontend și
+   repornind serviciul Gunicorn după fiecare upgrade al backend-ului:
 
-To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
+   ```bash
+   sudo systemctl restart ocr-backend.service
+   sudo rsync -a dist/ /var/www/ocr-vista-flow/current/
+   sudo systemctl reload nginx
+   ```
 
-Read more here: [Setting up a custom domain](https://docs.lovable.dev/features/custom-domain#custom-domain)
+## Variabile de mediu importante
+
+Backend-ul citește valorile din `backend/.env`:
+
+- `DATABASE_URL` – locația bazei de date (implicit SQLite în `data/app.db`)
+- `DATA_DIR` – directorul unde se salvează fișierele generate
+- `API_PREFIX` – prefixul public al API-ului (implicit `/api`)
+- `FRONTEND_ORIGINS` – listează origin-urile permise (separate prin virgulă)
+- `MISTRAL_API_KEY` – cheie opțională pentru rezumate automate
+
+Frontend-ul folosește `.env` din rădăcina proiectului (`.env.example`) pentru a
+configura `VITE_API_BASE_URL` (implicit `/api`).
+
+## Teste rapide
+
+```bash
+npm run build           # verifică build-ul frontend-ului
+python -m compileall backend/app  # verifică erori de sintaxă în backend
+```
+
+Aceste comenzi sunt rulate și în CI pentru a preveni erorile evidente de build.
