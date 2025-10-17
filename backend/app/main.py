@@ -74,8 +74,15 @@ def route(rule: str, *, methods: list[str]):
     through a small helper that always calls ``add_url_rule`` directly.
     """
 
+    normalized_rule = rule if rule == "/" else rule.rstrip("/")
+
     def decorator(func):
-        api_router.add_url_rule(rule, view_func=func, methods=methods)
+        api_router.add_url_rule(
+            normalized_rule,
+            view_func=func,
+            methods=methods,
+            strict_slashes=False,
+        )
         return func
 
     return decorator
@@ -311,6 +318,7 @@ def download_word_document(document_id: int):
 
 def create_app() -> Flask:
     app = Flask(__name__)
+    app.url_map.strict_slashes = False
     CORS(
         app,
         resources={r"*": {"origins": settings.frontend_origins + ["http://localhost", "http://127.0.0.1"]}},
