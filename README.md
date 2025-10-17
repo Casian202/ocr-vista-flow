@@ -71,3 +71,40 @@ Yes, you can!
 To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
 
 Read more here: [Setting up a custom domain](https://docs.lovable.dev/features/custom-domain#custom-domain)
+
+## Backend & OCR processing
+
+The application expune un API FastAPI (vezi `backend/app`) care rulează motoarele OCR [OCRmyPDF](https://github.com/ocrmypdf/OCRmyPDF) și [Docling](https://github.com/docling-project/docling). Serviciul gestionează:
+
+- cozi de procesare pentru fișiere PDF cu salvarea rezultatelor și a rezumatelor generate cu Mistral AI (dacă `MISTRAL_API_KEY` este setat);
+- configurarea motorului OCR implicit din consola de administrare;
+- generarea și conversia documentelor `.docx` în Word Studio.
+
+Endpoint-urile API sunt montate sub `/api` și sunt consumate din interfața React prin `@tanstack/react-query`.
+
+### Rulare locală
+
+```sh
+# backend
+cd backend
+python -m venv .venv && source .venv/bin/activate
+pip install -r requirements.txt
+uvicorn app.main:app --reload
+
+# frontend
+npm install
+npm run dev
+```
+
+Setează variabila `MISTRAL_API_KEY` dacă dorești rezumate automate ale textului OCR.
+
+## Deploy cu Docker + Nginx
+
+Repo-ul include o stivă completă Docker Compose care publică frontend-ul prin Nginx (cu `server_name ocr.casianhome.org`) și API-ul FastAPI.
+
+```sh
+docker compose build
+docker compose up -d
+```
+
+La prima pornire serviciul backend instalează dependențele OCR și creează baza de date SQLite în volumul `backend-data`. Frontend-ul comunică cu API-ul prin `/api` (vezi `.env.example`).
