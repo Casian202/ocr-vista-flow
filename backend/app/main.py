@@ -88,6 +88,27 @@ def route(rule: str, *, methods: list[str]):
     return decorator
 
 
+class PrefixFallbackMiddleware:
+    """Route requests missing the configured prefix to the API blueprint."""
+
+    def __init__(self, app, prefix: str):
+        self.app = app
+        self.prefix = prefix.rstrip("/") if prefix else ""
+
+    def __call__(self, environ, start_response):
+        if not self.prefix:
+            return self.app(environ, start_response)
+
+        path = environ.get("PATH_INFO", "") or ""
+        if not path or path == "/" or path.startswith(self.prefix):
+            return self.app(environ, start_response)
+
+        adjusted = f"{self.prefix}{path if path.startswith('/') else '/' + path}"
+        updated_environ = environ.copy()
+        updated_environ["PATH_INFO"] = adjusted
+        return self.app(updated_environ, start_response)
+
+
 @route("/health", methods=["GET"])
 def health() -> Any:
     return json_response({"status": "ok"})
@@ -341,6 +362,10 @@ def create_app() -> Flask:
     documents_dir()
 
     app.register_blueprint(api_router, url_prefix=settings.api_prefix)
+
+    if settings.api_prefix:
+        app.wsgi_app = PrefixFallbackMiddleware(app.wsgi_app, settings.api_prefix)
+
     return app
 
 

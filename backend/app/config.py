@@ -3,7 +3,7 @@ from pathlib import Path
 from typing import List
 
 from pydantic import model_validator
-from pydantic_settings import BaseSettings
+from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
 class Settings(BaseSettings):
@@ -28,9 +28,10 @@ class Settings(BaseSettings):
         self.api_prefix = normalized
         return self
 
-    class Config:
-        env_file = ".env"
-        env_prefix = ""
+    model_config = SettingsConfigDict(
+        env_file=".env",
+        extra="ignore",
+    )
 
 
 @lru_cache(maxsize=1)
