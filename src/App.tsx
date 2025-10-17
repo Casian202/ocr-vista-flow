@@ -11,6 +11,7 @@ import Folders from "./pages/Folders";
 import OCR from "./pages/OCR";
 import Admin from "./pages/Admin";
 import Preview from "./pages/Preview";
+import WordStudio from "./pages/WordStudio";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -33,6 +34,7 @@ const App = () => (
                   <Route path="/ocr" element={<OCR />} />
                   <Route path="/admin" element={<Admin />} />
                   <Route path="/preview" element={<Preview />} />
+                  <Route path="/word-studio" element={<WordStudio />} />
                   {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
                   <Route path="*" element={<NotFound />} />
                 </Routes>

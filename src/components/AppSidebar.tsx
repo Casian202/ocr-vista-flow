@@ -1,4 +1,4 @@
-import { Home, Folder, ScanText, UserCog, Eye } from "lucide-react";
+import { Home, Folder, ScanText, UserCog, Eye, FileText } from "lucide-react";
 import { NavLink } from "react-router-dom";
 
 import {
@@ -14,11 +14,12 @@ import {
 } from "@/components/ui/sidebar";
 
 const items = [
-  { title: "Dashboard", url: "/", icon: Home },
-  { title: "Folders", url: "/folders", icon: Folder },
-  { title: "OCR", url: "/ocr", icon: ScanText },
-  { title: "Admin", url: "/admin", icon: UserCog },
-  { title: "Preview", url: "/preview", icon: Eye },
+  { title: "Instrucțiuni", url: "/", icon: Home },
+  { title: "OCR Studio", url: "/ocr", icon: ScanText },
+  { title: "Biblioteci", url: "/folders", icon: Folder },
+  { title: "Previzualizare", url: "/preview", icon: Eye },
+  { title: "Word Studio", url: "/word-studio", icon: FileText },
+  { title: "Consolă Admin", url: "/admin", icon: UserCog },
 ];
 
 export function AppSidebar() {

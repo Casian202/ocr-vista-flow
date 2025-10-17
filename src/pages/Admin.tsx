@@ -1,160 +1,160 @@
+import { useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Users, Settings, Shield, Database } from "lucide-react";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Badge } from "@/components/ui/badge";
+import { Textarea } from "@/components/ui/textarea";
+import { Settings, Users } from "lucide-react";
 
 const users = [
-  { name: "Ion Popescu", email: "ion@example.com", role: "Admin", status: "active" },
-  { name: "Maria Ionescu", email: "maria@example.com", role: "User", status: "active" },
-  { name: "Andrei Dumitrescu", email: "andrei@example.com", role: "User", status: "inactive" },
+  { id: 1, username: "Casian202", status: "approved" },
+];
+
+const menuPermissions = [
+  { id: "home", label: "home" },
+  { id: "instructiuni", label: "Instrucțiuni" },
+  { id: "ocr", label: "ocr" },
+  { id: "ocr-studio", label: "OCR Studio" },
+  { id: "biblioteci", label: "Biblioteci" },
+  { id: "preview", label: "preview" },
+  { id: "previzualizare", label: "Previzualizare" },
+  { id: "word", label: "word" },
+  { id: "word-studio", label: "Word Studio" },
+  { id: "admin", label: "admin" },
+  { id: "admin-console", label: "Consolă Admin" },
 ];
 
 export default function Admin() {
+  const [selectedUser, setSelectedUser] = useState("casian202");
+  const [selectedEngine, setSelectedEngine] = useState("docling");
+
   return (
-    <div className="animate-fade-in space-y-8">
+    <div className="animate-fade-in space-y-6">
+      {/* Header */}
       <div>
-        <h1 className="text-4xl font-bold bg-gradient-primary bg-clip-text text-transparent">
-          Administrare
-        </h1>
-        <p className="text-muted-foreground mt-2">
-          Gestionează utilizatori și setări ale sistemului
+        <h1 className="text-3xl font-bold">Consolă administrator</h1>
+        <p className="text-muted-foreground mt-1">
+          Gestionează cerințe de acces și acordă permisiuni per module pentru fiecare utilizator.
         </p>
       </div>
 
-      <div className="grid gap-6 md:grid-cols-4">
-        {[
-          { title: "Total Utilizatori", value: "48", icon: Users },
-          { title: "Setări Active", value: "12", icon: Settings },
-          { title: "Nivel Securitate", value: "High", icon: Shield },
-          { title: "Stocare Folosită", value: "45GB", icon: Database },
-        ].map((stat, index) => (
-          <Card
-            key={stat.title}
-            className="bg-gradient-card shadow-soft hover:shadow-medium transition-all duration-300 border-border/50"
-            style={{ animationDelay: `${index * 100}ms` }}
-          >
-            <CardHeader className="pb-2">
-              <stat.icon className="h-5 w-5 text-primary mb-2" />
-              <CardTitle className="text-2xl font-bold">{stat.value}</CardTitle>
-              <CardDescription>{stat.title}</CardDescription>
-            </CardHeader>
-          </Card>
-        ))}
-      </div>
+      <div className="grid gap-6">
+        {/* OCR Engine Settings */}
+        <Card className="bg-gradient-card shadow-medium border-border/50">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Settings className="h-5 w-5" />
+              Setări motor OCR
+            </CardTitle>
+            <CardDescription>Motorul curent: {selectedEngine === "docling" ? "Docling" : "OCRmyPDF"}</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="ocr-engine">Motor OCR implicit:</Label>
+              <Select value={selectedEngine} onValueChange={setSelectedEngine}>
+                <SelectTrigger id="ocr-engine">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent className="bg-popover z-50">
+                  <SelectItem value="docling">Docling</SelectItem>
+                  <SelectItem value="ocrmypdf">OCRmyPDF</SelectItem>
+                </SelectContent>
+              </Select>
+              <p className="text-xs text-muted-foreground">
+                Selectează un motorul implicit folosit pentru OCR.
+              </p>
+            </div>
 
-      <Tabs defaultValue="users" className="space-y-4">
-        <TabsList className="bg-muted">
-          <TabsTrigger value="users">Utilizatori</TabsTrigger>
-          <TabsTrigger value="settings">Setări</TabsTrigger>
-          <TabsTrigger value="security">Securitate</TabsTrigger>
-        </TabsList>
+            <Button className="bg-primary hover:bg-primary/90">
+              Salvează setarea
+            </Button>
+          </CardContent>
+        </Card>
 
-        <TabsContent value="users" className="space-y-4">
+        {/* User Management */}
+        <div className="grid gap-6 lg:grid-cols-2">
+          {/* Users List */}
           <Card className="bg-gradient-card shadow-medium border-border/50">
             <CardHeader>
-              <div className="flex items-center justify-between">
-                <div>
-                  <CardTitle>Gestionare Utilizatori</CardTitle>
-                  <CardDescription>Administrează accesul utilizatorilor</CardDescription>
-                </div>
-                <Button className="bg-gradient-primary">
-                  Adaugă Utilizator
-                </Button>
-              </div>
+              <CardTitle className="flex items-center gap-2">
+                <Users className="h-5 w-5" />
+                Utilizatori
+              </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="space-y-3">
-                {users.map((user, index) => (
+              <div className="space-y-2">
+                {users.map((user) => (
                   <div
-                    key={index}
-                    className="flex items-center justify-between p-4 rounded-lg bg-muted/50 hover:bg-muted transition-colors"
+                    key={user.id}
+                    onClick={() => setSelectedUser(user.username.toLowerCase())}
+                    className={`flex items-center justify-between p-3 rounded-lg cursor-pointer transition-colors ${
+                      selectedUser === user.username.toLowerCase()
+                        ? "bg-primary/10 border border-primary"
+                        : "bg-muted/50 hover:bg-muted"
+                    }`}
                   >
-                    <div className="flex items-center gap-4">
-                      <div className="h-10 w-10 rounded-full bg-gradient-primary flex items-center justify-center text-white font-semibold">
-                        {user.name.charAt(0)}
-                      </div>
-                      <div>
-                        <p className="text-sm font-medium">{user.name}</p>
-                        <p className="text-xs text-muted-foreground">{user.email}</p>
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-3">
-                      <span className="text-xs px-2 py-1 rounded-full bg-primary/10 text-primary">
-                        {user.role}
-                      </span>
-                      <span
-                        className={`text-xs px-2 py-1 rounded-full ${
-                          user.status === "active"
-                            ? "bg-green-500/10 text-green-600"
-                            : "bg-gray-500/10 text-gray-600"
-                        }`}
-                      >
-                        {user.status}
-                      </span>
-                      <Button variant="ghost" size="sm">
-                        Editează
-                      </Button>
-                    </div>
+                    <span className="font-medium">{user.username}</span>
+                    <Badge 
+                      variant="secondary"
+                      className="bg-green-500/10 text-green-600 hover:bg-green-500/20"
+                    >
+                      {user.status === "approved" ? "Approved" : user.status}
+                    </Badge>
                   </div>
                 ))}
               </div>
             </CardContent>
           </Card>
-        </TabsContent>
 
-        <TabsContent value="settings" className="space-y-4">
+          {/* Edit User */}
           <Card className="bg-gradient-card shadow-medium border-border/50">
             <CardHeader>
-              <CardTitle>Setări Sistem</CardTitle>
-              <CardDescription>Configurează comportamentul aplicației</CardDescription>
+              <CardTitle>Editează: {selectedUser}</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
-              {[
-                { label: "Nume Organizație", value: "OCR Solutions SRL" },
-                { label: "Email Contact", value: "contact@ocr.ro" },
-                { label: "Limită Upload", value: "10 MB" },
-                { label: "Limită Stocare", value: "100 GB" },
-              ].map((setting) => (
-                <div key={setting.label} className="flex items-center justify-between p-3 rounded-lg bg-muted/50">
-                  <span className="text-sm font-medium">{setting.label}</span>
-                  <Input
-                    defaultValue={setting.value}
-                    className="w-48 bg-background"
-                  />
-                </div>
-              ))}
-            </CardContent>
-          </Card>
-        </TabsContent>
+              <div className="space-y-2">
+                <Label htmlFor="user-status">Status:</Label>
+                <Select defaultValue="approved">
+                  <SelectTrigger id="user-status">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent className="bg-popover z-50">
+                    <SelectItem value="approved">Approved</SelectItem>
+                    <SelectItem value="pending">Pending</SelectItem>
+                    <SelectItem value="denied">Denied</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
 
-        <TabsContent value="security" className="space-y-4">
-          <Card className="bg-gradient-card shadow-medium border-border/50">
-            <CardHeader>
-              <CardTitle>Setări Securitate</CardTitle>
-              <CardDescription>Configurează opțiunile de securitate</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              {[
-                { label: "Autentificare 2FA", enabled: true },
-                { label: "Criptare Fișiere", enabled: true },
-                { label: "Backup Automat", enabled: false },
-                { label: "Audit Logging", enabled: true },
-              ].map((option) => (
-                <div key={option.label} className="flex items-center justify-between p-3 rounded-lg bg-muted/50">
-                  <span className="text-sm font-medium">{option.label}</span>
-                  <Button
-                    variant={option.enabled ? "default" : "outline"}
-                    size="sm"
-                  >
-                    {option.enabled ? "Activat" : "Dezactivat"}
-                  </Button>
+              <div className="space-y-2">
+                <Label>Meniuri disponibile:</Label>
+                <div className="border rounded-lg p-3 bg-muted/30 space-y-1 max-h-[200px] overflow-y-auto">
+                  {menuPermissions.map((menu) => (
+                    <div key={menu.id} className="text-sm py-1">
+                      {menu.label}
+                    </div>
+                  ))}
                 </div>
-              ))}
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="user-notes">Notes:</Label>
+                <Textarea 
+                  id="user-notes" 
+                  placeholder="Adaugă notițe despre utilizator..." 
+                  className="min-h-[100px]"
+                />
+              </div>
+
+              <Button className="w-full bg-primary hover:bg-primary/90">
+                Salvează
+              </Button>
             </CardContent>
           </Card>
-        </TabsContent>
-      </Tabs>
+        </div>
+      </div>
     </div>
   );
 }
