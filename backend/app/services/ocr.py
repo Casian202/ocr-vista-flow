@@ -166,9 +166,9 @@ def process_job(job_id: int) -> None:
 
             if text_excerpt:
                 summary_prompt = (
-                    "Rezuma textul extras dintr-un document scanat in 3-4 fraze in limba romana. Textul este urmatorul:
-"
-                    + text_excerpt[:4000]
+                    "Rezuma textul extras dintr-un document scanat in 3-4 fraze in limba romana. "
+                    "Textul este urmatorul:\n"
+                    f"{text_excerpt[:4000]}"
                 )
                 summary = generate_summary(summary_prompt)
                 if summary:

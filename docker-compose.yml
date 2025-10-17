@@ -1,5 +1,3 @@
-version: "3.9"
-
 services:
   backend:
     build:
@@ -11,8 +9,8 @@ services:
       - MISTRAL_API_KEY=${MISTRAL_API_KEY:-}
     volumes:
       - backend-data:/app/data
-    expose:
-      - "8000"
+    ports:
+      - "8000:8000"
 
   nginx:
     build:
