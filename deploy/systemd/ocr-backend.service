@@ -1,0 +1,15 @@
+[Unit]
+Description=OCR Vista Flow backend (Gunicorn)
+After=network.target
+
+[Service]
+Type=simple
+WorkingDirectory=/opt/ocr-vista-flow/backend
+EnvironmentFile=/opt/ocr-vista-flow/backend/.env
+ExecStart=/opt/ocr-vista-flow/.venv/bin/gunicorn --workers 4 --bind 127.0.0.1:8000 backend.app.wsgi:app
+Restart=on-failure
+User=www-data
+Group=www-data
+
+[Install]
+WantedBy=multi-user.target
