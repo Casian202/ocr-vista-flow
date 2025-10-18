@@ -17,16 +17,19 @@ Flask expus prin Gunicorn.
 ### 1. Backend
 
 ```bash
-./scripts/setup_backend.sh   # creează mediul virtual și instalează dependențele
+./scripts/setup_backend.sh          # creează mediul virtual și instalează dependențele
+# Exemplu dacă repo-ul este în alt director: ./scripts/setup_backend.sh --root /opt/ocr-vista-flow
 source .venv/bin/activate
-python -m backend.app.main   # pornește serverul pe http://127.0.0.1:8000
+python -m backend.app.main          # pornește serverul pe http://127.0.0.1:8000
 ```
 
-Scriptul `scripts/setup_backend.sh` rulează aceiași pași necesari pentru
-configurarea backend-ului (crearea mediului virtual, instalarea dependențelor și
-copierea fișierului `.env` dacă lipsește), evitând erorile întâlnite pe sisteme
-Debian/Ubuntu configurate cu PEP 668. Backend-ul creează directoarele necesare
-în folderul `data/` și initializează automat baza de date SQLite definită în
+Scriptul `scripts/setup_backend.sh` rulează pașii necesari pentru configurarea
+backend-ului (crearea mediului virtual, instalarea dependențelor și copierea
+fișierului `.env` dacă lipsește), evitând erorile întâlnite pe sisteme
+Debian/Ubuntu configurate cu PEP 668. Poate lucra direct din directorul
+depozitului sau poate primi explicit calea repo-ului prin `--root` și un alt
+interpretor Python cu `--python`. Backend-ul creează directoarele necesare în
+folderul `data/` și initializează automat baza de date SQLite definită în
 `DATABASE_URL`.
 
 ### 2. Frontend
@@ -60,15 +63,17 @@ către backend prin `/api`.
    sudo rsync -a dist/ /var/www/ocr-vista-flow/current/
    ```
 
-4. **Configurează Gunicorn prin systemd** folosind fișierul de exemplu
-   `deploy/systemd/ocr-backend.service`. Actualizează căile către depozit și
-   mediul virtual, apoi:
+4. **Configurează Gunicorn prin systemd** cu scriptul dedicat. Acesta randă
+   șablonul `deploy/systemd/ocr-backend.service.template`, personalizează căile
+   și activează serviciul:
 
    ```bash
-   sudo cp deploy/systemd/ocr-backend.service /etc/systemd/system/
-   sudo systemctl daemon-reload
-   sudo systemctl enable --now ocr-backend.service
+   sudo ./scripts/install_backend_service.sh --root /opt/ocr-vista-flow
+   # Pentru o verificare înainte de instalare: ./scripts/install_backend_service.sh --dry-run
    ```
+
+   Scriptul acceptă opțiuni pentru numărul de workeri, adresa de bind, utilizator
+   și locația fișierului `.env` (vezi `--help`).
 
 5. **Actualizează Nginx** cu `deploy/nginx.conf`. Acesta servește fișierele
    statice din `/var/www/ocr-vista-flow/current` și face proxy către backend-ul

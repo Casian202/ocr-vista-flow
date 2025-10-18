@@ -1,0 +1,18 @@
+# Template rendered by scripts/install_backend_service.sh
+# Tokens: @APP_ROOT@, @ENV_FILE@, @WORKERS@, @BIND_ADDRESS@, @SERVICE_USER@, @SERVICE_GROUP@
+
+[Unit]
+Description=OCR Vista Flow backend (Gunicorn)
+After=network.target
+
+[Service]
+Type=simple
+WorkingDirectory=@APP_ROOT@/backend
+EnvironmentFile=@ENV_FILE@
+ExecStart=@APP_ROOT@/.venv/bin/gunicorn --workers @WORKERS@ --bind @BIND_ADDRESS@ backend.app.wsgi:app
+Restart=on-failure
+User=@SERVICE_USER@
+Group=@SERVICE_GROUP@
+
+[Install]
+WantedBy=multi-user.target
