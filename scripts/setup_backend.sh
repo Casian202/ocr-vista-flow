@@ -2,6 +2,7 @@
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+DEFAULT_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
 usage() {
   cat <<'USAGE'
 Usage: setup_backend.sh [options]
@@ -51,11 +52,13 @@ done
 if [ -n "${ROOT_OVERRIDE}" ]; then
   if [ ! -d "${ROOT_OVERRIDE}" ]; then
     echo "Error: --root path ${ROOT_OVERRIDE} does not exist." >&2
+    echo "Hint: repo-ul pare să fie la ${DEFAULT_ROOT}." >&2
+    echo "      Rulează scriptul fără --root sau oferă calea corectă." >&2
     exit 1
   fi
   REPO_ROOT="$(cd "${ROOT_OVERRIDE}" && pwd)"
 else
-  REPO_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
+  REPO_ROOT="${DEFAULT_ROOT}"
 fi
 
 BACKEND_DIR="${REPO_ROOT}/backend"

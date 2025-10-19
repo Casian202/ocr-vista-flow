@@ -44,11 +44,13 @@ către backend prin `/api`.
 
 ## Deploy fără Docker (cu Nginx existent)
 
-1. **Clonează proiectul pe server** (exemplu `/opt/ocr-vista-flow`).
+1. **Clonează proiectul pe server** (de exemplu în `/opt/ocr-vista-flow`).
+   Dacă repo-ul se află deja în altă locație (de ex. `/root/ocr-vista-flow`),
+   folosește acea cale în toate comenzile de mai jos.
 2. **Creează un mediu virtual Python** și instalează dependențele:
 
    ```bash
-   cd /opt/ocr-vista-flow
+   cd /opt/ocr-vista-flow    # înlocuiește cu calea reală a repo-ului
    ./scripts/setup_backend.sh
    source .venv/bin/activate
    ```
@@ -56,7 +58,7 @@ către backend prin `/api`.
 3. **Construiește frontend-ul și publică-l într-un director servit de Nginx**:
 
    ```bash
-   cd /opt/ocr-vista-flow
+   cd /opt/ocr-vista-flow    # înlocuiește cu calea reală a repo-ului
    npm ci
    npm run build
    sudo mkdir -p /var/www/ocr-vista-flow/current
@@ -68,8 +70,10 @@ către backend prin `/api`.
    și activează serviciul:
 
    ```bash
-   sudo ./scripts/install_backend_service.sh --root /opt/ocr-vista-flow
-   # Pentru o verificare înainte de instalare: ./scripts/install_backend_service.sh --dry-run
+   # Înlocuiește $(pwd) cu calea repo-ului dacă rulezi din alt director
+   sudo ./scripts/install_backend_service.sh --root "$(pwd)"
+   # Pentru o verificare înainte de instalare:
+   ./scripts/install_backend_service.sh --root "$(pwd)" --dry-run
    ```
 
    Scriptul acceptă opțiuni pentru numărul de workeri, adresa de bind, utilizator

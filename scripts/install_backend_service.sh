@@ -81,6 +81,8 @@ done
 if [ -n "$ROOT_OVERRIDE" ]; then
   if [ ! -d "$ROOT_OVERRIDE" ]; then
     echo "Error: --root path $ROOT_OVERRIDE does not exist." >&2
+    echo "Hint: repo-ul pare să fie la $DEFAULT_ROOT. Rulează scriptul fără --root" >&2
+    echo "      sau furnizează calea corectă (ex: --root \"$DEFAULT_ROOT\")." >&2
     exit 1
   fi
   APP_ROOT="$(cd "$ROOT_OVERRIDE" && pwd)"
