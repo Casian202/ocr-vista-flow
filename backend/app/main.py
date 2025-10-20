@@ -171,8 +171,16 @@ def create_ocr_job() -> Any:
     auto_detect = request.form.get("auto_detect", "true").lower() in {"true", "1", "yes", "on"}
     language = request.form.get("language") or None
     folder = request.form.get("folder") or None
+    folder_id_raw = request.form.get("folder_id")
     engine_override = request.form.get("engine_override") or None
     options_raw = request.form.get("options")
+
+    folder_id = None
+    if folder_id_raw:
+        try:
+            folder_id = int(folder_id_raw)
+        except ValueError:
+            pass
 
     try:
         options_payload = json.loads(options_raw) if options_raw else None
@@ -201,6 +209,7 @@ def create_ocr_job() -> Any:
             auto_detect=auto_detect,
             language=language,
             folder=folder_value,
+            folder_id=folder_id,
             options=json.dumps(options_payload) if options_payload else None,
         )
         session.add(job)
