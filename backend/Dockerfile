@@ -14,7 +14,8 @@ RUN apt-get update && \
     poppler-utils \
     pkg-config \
     libxml2-dev \
-    libxslt1-dev && \
+    libxslt1-dev \
+    curl && \
     rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
@@ -23,6 +24,8 @@ COPY backend/requirements.txt ./requirements.txt
 RUN pip install --no-cache-dir -r requirements.txt
 
 COPY backend/app ./app
+
+RUN mkdir -p /app/data
 
 ENV PYTHONPATH=/app \
     DATA_DIR=/app/data \
