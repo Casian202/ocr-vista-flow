@@ -22,8 +22,12 @@ Aplicația funcționează și fără variabile de mediu personalizate, dar poți
 
 ```bash
 cp .env.example .env
-# Editează .env cu setările tale (opțional - MISTRAL_API_KEY etc.)
+# Editează .env cu setările tale (opțional):
+# - MISTRAL_API_KEY pentru rezumate automate AI
+# - VITE_SUPABASE_URL și VITE_SUPABASE_PUBLISHABLE_KEY pentru autentificare (opțional)
 ```
+
+**Notă:** Autentificarea este opțională. Dacă nu configurezi Supabase, aplicația va funcționa fără autentificare, permițând acces direct la toate funcționalitățile.
 
 ### 2. Pornește aplicația cu Docker Compose
 
