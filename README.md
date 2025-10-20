@@ -12,7 +12,54 @@ Flask expus prin Gunicorn.
 - **AI:** Integrare opțională cu Mistral (`MISTRAL_API_KEY`)
 - **Reverse proxy:** Nginx
 
-## Configurare locală
+## Deploy cu Docker (Recomandat)
+
+Modul cel mai simplu de a porni aplicația este prin Docker Compose:
+
+### 1. Pregătește fișierul .env (opțional)
+
+Aplicația funcționează și fără variabile de mediu personalizate, dar poți crea un fișier `.env` în directorul rădăcină pentru a configura setările:
+
+```bash
+cp .env.example .env
+# Editează .env cu setările tale (opțional):
+# - MISTRAL_API_KEY pentru rezumate automate AI
+# - VITE_SUPABASE_URL și VITE_SUPABASE_PUBLISHABLE_KEY pentru autentificare (opțional)
+```
+
+**Notă:** Autentificarea este opțională. Dacă nu configurezi Supabase, aplicația va funcționa fără autentificare, permițând acces direct la toate funcționalitățile.
+
+### 2. Pornește aplicația cu Docker Compose
+
+```bash
+docker compose up -d
+```
+
+Aceasta va:
+- Construi imaginea backend-ului cu toate dependențele Python și OCR
+- Construi imaginea frontend-ului și o va servi prin Nginx
+- Crea un volum persistent pentru datele aplicației
+- Expune aplicația pe portul 80
+
+### 3. Accesează aplicația
+
+Deschide browser-ul la: **http://localhost**
+
+Backend-ul rulează pe portul 8000 (expus și pentru debugging), iar Nginx face proxy către acesta pentru toate request-urile `/api/`.
+
+### 4. Oprește aplicația
+
+```bash
+docker compose down
+```
+
+Pentru a șterge și volumele de date:
+
+```bash
+docker compose down -v
+```
+
+## Configurare locală (fără Docker)
 
 ### 1. Backend
 
