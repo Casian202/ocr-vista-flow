@@ -11,6 +11,8 @@ import { Folder, Plus, FileText, Download, Trash2, Edit, MoreVertical, Eye } fro
 import { Textarea } from "@/components/ui/textarea";
 import { getJSON, postJSON, patchJSON, deleteRequest } from "@/lib/api";
 import type { Folder as FolderType, FolderCreate, FolderUpdate } from "@/types/folder";
+import type { OCRJob } from "@/types/ocr";
+import type { WordDocument } from "@/types/word";
 import { useToast } from "@/hooks/use-toast";
 
 const folderColors = [
@@ -44,7 +46,7 @@ export default function Folders() {
 
   const { data: folderDocuments } = useQuery({
     queryKey: ["folder-documents", viewingFolder?.id],
-    queryFn: () => getJSON<{ ocr_jobs: any[]; word_documents: any[] }>(`/folders/${viewingFolder?.id}/documents`),
+    queryFn: () => getJSON<{ ocr_jobs: OCRJob[]; word_documents: WordDocument[] }>(`/folders/${viewingFolder?.id}/documents`),
     enabled: Boolean(viewingFolder?.id),
   });
 
@@ -355,7 +357,7 @@ export default function Folders() {
                 <h3 className="text-sm font-medium mb-2">OCR Jobs ({folderDocuments?.ocr_jobs.length || 0})</h3>
                 {folderDocuments?.ocr_jobs && folderDocuments.ocr_jobs.length > 0 ? (
                   <div className="space-y-2">
-                    {folderDocuments.ocr_jobs.map((job: any) => (
+                    {folderDocuments.ocr_jobs.map((job: OCRJob) => (
                       <div
                         key={job.id}
                         className="flex items-center justify-between p-3 rounded-lg bg-muted/50 hover:bg-muted transition-colors"
@@ -394,7 +396,7 @@ export default function Folders() {
                 </h3>
                 {folderDocuments?.word_documents && folderDocuments.word_documents.length > 0 ? (
                   <div className="space-y-2">
-                    {folderDocuments.word_documents.map((doc: any) => (
+                    {folderDocuments.word_documents.map((doc: WordDocument) => (
                       <div
                         key={doc.id}
                         className="flex items-center justify-between p-3 rounded-lg bg-muted/50 hover:bg-muted transition-colors"
