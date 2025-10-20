@@ -16,7 +16,7 @@ from sqlmodel import select
 
 from .config import get_settings
 from .database import get_session, init_db
-from .models import OCRJob
+from .models import OCRJob, WordDocument
 from .schemas import (
     FolderCreate,
     FolderUpdate,
@@ -447,6 +447,23 @@ def download_folder_route(folder_id: int):
         as_attachment=True,
         download_name=f"{folder.name}.zip",
     )
+
+
+@route("/folders/<int:folder_id>/documents", methods=["GET"])
+def get_folder_documents(folder_id: int):
+    with get_session() as session:
+        folder = get_folder(session, folder_id)
+        if not folder:
+            abort(json_response({"detail": "Folder inexistent"}, 404))
+        
+        ocr_jobs = list(session.exec(select(OCRJob).where(OCRJob.folder_id == folder_id)).all())
+        word_docs = list(session.exec(select(WordDocument).where(WordDocument.folder_id == folder_id)).all())
+        
+        response = {
+            "ocr_jobs": [serialize_job(job, settings.api_prefix).model_dump() for job in ocr_jobs],
+            "word_documents": [serialize_word_document(doc, settings.api_prefix).model_dump() for doc in word_docs],
+        }
+    return json_response(response)
 
 
 def create_app() -> Flask:
