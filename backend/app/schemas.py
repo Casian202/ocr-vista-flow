@@ -19,6 +19,7 @@ class OCRJobRead(BaseModel):
     auto_detect: bool
     language: Optional[str]
     folder: Optional[str]
+    folder_id: Optional[int]
     status: str
     progress: int
     error: Optional[str]
@@ -37,6 +38,7 @@ class OCRJobDetail(OCRJobRead):
 
 class OCRJobUpdate(BaseModel):
     folder: Optional[str] = None
+    folder_id: Optional[int] = None
 
 
 class WordDocumentRead(BaseModel):
@@ -49,6 +51,7 @@ class WordDocumentRead(BaseModel):
     summary: Optional[str]
     created_at: datetime
     download_url: str
+    folder_id: Optional[int] = None
 
 
 class WordGenerateRequest(BaseModel):
@@ -62,3 +65,28 @@ class WordGenerateResponse(BaseModel):
 
 class WordConvertResponse(BaseModel):
     document: WordDocumentRead
+
+
+class FolderCreate(BaseModel):
+    name: str
+    description: Optional[str] = None
+    color: str = "green"
+    parent_id: Optional[int] = None
+
+
+class FolderUpdate(BaseModel):
+    name: Optional[str] = None
+    description: Optional[str] = None
+    color: Optional[str] = None
+    parent_id: Optional[int] = None
+
+
+class FolderRead(BaseModel):
+    id: int
+    name: str
+    description: Optional[str]
+    color: str
+    parent_id: Optional[int]
+    created_at: datetime
+    updated_at: datetime
+    document_count: int = 0

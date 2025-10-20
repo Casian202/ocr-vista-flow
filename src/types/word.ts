@@ -8,4 +8,5 @@ export interface WordDocument {
   summary?: string | null;
   created_at: string;
   download_url: string;
+  folder_id?: number | null;
 }

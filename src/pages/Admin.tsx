@@ -6,10 +6,13 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
-import { Settings, Users } from "lucide-react";
+import { Settings, Users, Database, FolderTree, FileText, Sparkles } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { getJSON, postJSON } from "@/lib/api";
 import type { OCREngineSetting } from "@/types/settings";
+import type { OCRJob } from "@/types/ocr";
+import type { Folder } from "@/types/folder";
+import type { WordDocument } from "@/types/word";
 
 const users = [
   { id: 1, username: "Casian202", status: "approved" },
@@ -40,6 +43,21 @@ export default function Admin() {
     queryFn: () => getJSON<OCREngineSetting>("/settings/ocr-engine"),
   });
 
+  const { data: jobs = [] } = useQuery({
+    queryKey: ["ocr-jobs"],
+    queryFn: () => getJSON<OCRJob[]>("/ocr/jobs"),
+  });
+
+  const { data: folders = [] } = useQuery({
+    queryKey: ["folders"],
+    queryFn: () => getJSON<Folder[]>("/folders"),
+  });
+
+  const { data: documents = [] } = useQuery({
+    queryKey: ["word-documents"],
+    queryFn: () => getJSON<WordDocument[]>("/word/documents"),
+  });
+
   useEffect(() => {
     if (engineSetting?.engine) {
       setSelectedEngine(engineSetting.engine);
@@ -58,14 +76,127 @@ export default function Admin() {
     },
   });
 
+  const completedJobs = jobs.filter((j) => j.status === "completed").length;
+  const processingJobs = jobs.filter((j) => j.status === "processing" || j.status === "queued").length;
+  const failedJobs = jobs.filter((j) => j.status === "failed").length;
+  const totalDocuments = folders.reduce((sum, f) => sum + f.document_count, 0);
+
   return (
     <div className="animate-fade-in space-y-6">
       <div>
         <h1 className="text-3xl font-bold">Consolă administrator</h1>
         <p className="text-muted-foreground mt-1">
-          Gestionează cerințe de acces și acordă permisiuni per module pentru fiecare utilizator.
+          Gestionează setările aplicației și monitorizează activitatea sistemului.
         </p>
       </div>
+
+      {/* Statistics Overview */}
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+        <Card className="bg-gradient-card shadow-soft border-border/50 hover-lift">
+          <CardContent className="pt-6">
+            <div className="flex items-center gap-3">
+              <div className="p-3 bg-blue-500/10 rounded-lg">
+                <Database className="h-6 w-6 text-blue-500" />
+              </div>
+              <div>
+                <p className="text-2xl font-bold">{jobs.length}</p>
+                <p className="text-sm text-muted-foreground">Total OCR Jobs</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="bg-gradient-card shadow-soft border-border/50 hover-lift">
+          <CardContent className="pt-6">
+            <div className="flex items-center gap-3">
+              <div className="p-3 bg-green-500/10 rounded-lg">
+                <FolderTree className="h-6 w-6 text-green-500" />
+              </div>
+              <div>
+                <p className="text-2xl font-bold">{folders.length}</p>
+                <p className="text-sm text-muted-foreground">Active Folders</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="bg-gradient-card shadow-soft border-border/50 hover-lift">
+          <CardContent className="pt-6">
+            <div className="flex items-center gap-3">
+              <div className="p-3 bg-purple-500/10 rounded-lg">
+                <FileText className="h-6 w-6 text-purple-500" />
+              </div>
+              <div>
+                <p className="text-2xl font-bold">{documents.length}</p>
+                <p className="text-sm text-muted-foreground">Word Documents</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="bg-gradient-card shadow-soft border-border/50 hover-lift">
+          <CardContent className="pt-6">
+            <div className="flex items-center gap-3">
+              <div className="p-3 bg-amber-500/10 rounded-lg">
+                <Sparkles className="h-6 w-6 text-amber-500" />
+              </div>
+              <div>
+                <p className="text-2xl font-bold">{completedJobs}</p>
+                <p className="text-sm text-muted-foreground">Completed Jobs</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Job Statistics */}
+      <Card className="bg-gradient-card shadow-medium border-border/50">
+        <CardHeader>
+          <CardTitle>Statistici procesări</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="grid gap-4 md:grid-cols-3">
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <span className="text-sm font-medium">Procesări finalizate</span>
+                <Badge className="bg-green-500/10 text-green-600 border-none">{completedJobs}</Badge>
+              </div>
+              <div className="h-2 bg-muted rounded-full overflow-hidden">
+                <div 
+                  className="h-full bg-green-500 transition-all" 
+                  style={{ width: jobs.length > 0 ? `${(completedJobs / jobs.length) * 100}%` : '0%' }}
+                />
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <span className="text-sm font-medium">În procesare</span>
+                <Badge className="bg-blue-500/10 text-blue-600 border-none">{processingJobs}</Badge>
+              </div>
+              <div className="h-2 bg-muted rounded-full overflow-hidden">
+                <div 
+                  className="h-full bg-blue-500 transition-all" 
+                  style={{ width: jobs.length > 0 ? `${(processingJobs / jobs.length) * 100}%` : '0%' }}
+                />
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <span className="text-sm font-medium">Eșuate</span>
+                <Badge className="bg-red-500/10 text-red-600 border-none">{failedJobs}</Badge>
+              </div>
+              <div className="h-2 bg-muted rounded-full overflow-hidden">
+                <div 
+                  className="h-full bg-red-500 transition-all" 
+                  style={{ width: jobs.length > 0 ? `${(failedJobs / jobs.length) * 100}%` : '0%' }}
+                />
+              </div>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
 
       <div className="grid gap-6">
         <Card className="bg-gradient-card shadow-medium border-border/50">

@@ -7,6 +7,7 @@ export interface OCRJob {
   auto_detect: boolean;
   language?: string | null;
   folder?: string | null;
+  folder_id?: number | null;
   status: OCRStatus;
   progress: number;
   error?: string | null;

@@ -88,7 +88,7 @@ export default function OCR() {
 
   const [autoDetectLanguage, setAutoDetectLanguage] = useState(true);
   const [selectedLanguage, setSelectedLanguage] = useState("romanian");
-  const [selectedFolder, setSelectedFolder] = useState("default");
+  const [selectedFolder, setSelectedFolder] = useState<number | null>(null);
   const [showAdvancedSettings, setShowAdvancedSettings] = useState(false);
   const [advancedOptions, setAdvancedOptions] = useState<AdvancedOptionsState>(emptyAdvancedOptions);
   const [searchQuery, setSearchQuery] = useState("");
@@ -101,6 +101,11 @@ export default function OCR() {
   const { data: engineSetting } = useQuery({
     queryKey: ["ocr-engine"],
     queryFn: () => getJSON<OCREngineSetting>("/settings/ocr-engine"),
+  });
+
+  const { data: folders = [] } = useQuery({
+    queryKey: ["folders"],
+    queryFn: () => getJSON<Array<{ id: number; name: string; color: string }>>("/folders"),
   });
 
   useEffect(() => {
@@ -200,8 +205,8 @@ export default function OCR() {
   });
 
   const updateFolderMutation = useMutation({
-    mutationFn: ({ jobId, folder }: { jobId: number; folder: string }) =>
-      patchJSON<OCRJob>(`/ocr/jobs/${jobId}`, { folder }),
+    mutationFn: ({ jobId, folder_id }: { jobId: number; folder_id: number | null }) =>
+      patchJSON<OCRJob>(`/ocr/jobs/${jobId}`, { folder_id }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["ocr-jobs"] });
       toast({ title: "Document actualizat", description: "Folderul a fost modificat." });
@@ -223,7 +228,9 @@ export default function OCR() {
     if (!autoDetectLanguage && selectedLanguage) {
       formData.append("language", selectedLanguage);
     }
-    formData.append("folder", selectedFolder);
+    if (selectedFolder) {
+      formData.append("folder_id", String(selectedFolder));
+    }
     formData.append("engine_override", selectedEngine);
 
     const optionsPayload = {
@@ -247,7 +254,7 @@ export default function OCR() {
   };
 
   const handleAssignFolder = (jobId: number) => {
-    updateFolderMutation.mutate({ jobId, folder: selectedFolder });
+    updateFolderMutation.mutate({ jobId, folder_id: selectedFolder });
   };
 
   const handleDownload = (job: OCRJob) => {
@@ -353,15 +360,17 @@ export default function OCR() {
 
             <div className="space-y-2">
               <Label htmlFor="folder-select">Stochează în folder:</Label>
-              <Select value={selectedFolder} onValueChange={setSelectedFolder}>
+              <Select value={selectedFolder?.toString() || "none"} onValueChange={(val) => setSelectedFolder(val === "none" ? null : Number(val))}>
                 <SelectTrigger id="folder-select">
                   <SelectValue placeholder="Selectează folder" />
                 </SelectTrigger>
                 <SelectContent className="bg-popover z-50">
-                  <SelectItem value="default">---------</SelectItem>
-                  <SelectItem value="test">test</SelectItem>
-                  <SelectItem value="documente">Documente</SelectItem>
-                  <SelectItem value="facturi">Facturi</SelectItem>
+                  <SelectItem value="none">Fără folder</SelectItem>
+                  {folders.map((folder) => (
+                    <SelectItem key={folder.id} value={folder.id.toString()}>
+                      {folder.name}
+                    </SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
               <p className="text-xs text-muted-foreground">
@@ -422,7 +431,12 @@ export default function OCR() {
                         <p className="text-xs text-muted-foreground">
                           Creat {new Date(job.created_at).toLocaleString()} · Motor: {job.engine}
                         </p>
-                        {job.folder && (
+                        {job.folder_id && (
+                          <p className="text-xs text-muted-foreground">
+                            Arhivat în: {folders.find(f => f.id === job.folder_id)?.name || "necunoscut"}
+                          </p>
+                        )}
+                        {job.folder && !job.folder_id && (
                           <p className="text-xs text-muted-foreground">Arhivat în: {job.folder}</p>
                         )}
                         {job.summary && (
@@ -460,7 +474,7 @@ export default function OCR() {
                               disabled={updateFolderMutation.isPending}
                             >
                               <FolderInput className="h-4 w-4 mr-2" />
-                              Salvează în folder ({selectedFolder || "implicit"})
+                              Salvează în folder ({selectedFolder ? folders.find(f => f.id === selectedFolder)?.name || "necunoscut" : "fără folder"})
                             </Button>
                             <Button
                               variant="ghost"

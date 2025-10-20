@@ -40,9 +40,18 @@ export function PageHeader() {
 
   const toggleTheme = () => {
     const newTheme = theme === "light" ? "dark" : "light";
+    
+    // Add theme transition class
+    document.documentElement.classList.add('theme-transition');
+    
     setTheme(newTheme);
     localStorage.setItem("theme", newTheme);
     document.documentElement.classList.toggle("dark", newTheme === "dark");
+    
+    // Remove transition class after animation completes
+    setTimeout(() => {
+      document.documentElement.classList.remove('theme-transition');
+    }, 300);
   };
 
   const handleLogout = async () => {
