@@ -1,0 +1,30 @@
+# Docker Compose Override Example
+# Copy this file to docker-compose.override.yml for development
+# The override file is automatically used by docker compose
+
+services:
+  backend:
+    # Mount source code for live development
+    volumes:
+      - ./backend/app:/app/app
+      - backend-data:/app/data
+    # Enable auto-reload on code changes
+    command: ["gunicorn", "-w", "1", "-b", "0.0.0.0:8000", "--reload", "app.main:app"]
+    environment:
+      - DATABASE_URL=sqlite:///data/app.db
+      - DATA_DIR=/app/data
+      - MISTRAL_API_KEY=${MISTRAL_API_KEY:-}
+      - FLASK_ENV=development
+  
+  nginx:
+    # For development, you might want to access frontend directly
+    # Uncomment the following to use Vite dev server instead of nginx build
+    # build:
+    #   target: build
+    ports:
+      - "80:80"
+      # Optionally expose on a different port for testing
+      # - "8080:80"
+
+volumes:
+  backend-data:
