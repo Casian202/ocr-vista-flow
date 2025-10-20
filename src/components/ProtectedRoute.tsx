@@ -18,7 +18,11 @@ const ProtectedRoute = ({ children }: ProtectedRouteProps) => {
     const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
     const supabaseKey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
     
-    if (!supabaseUrl || !supabaseKey || supabaseUrl === 'your-project-url' || supabaseKey === 'your-anon-key') {
+    if (!supabaseUrl || !supabaseKey || 
+        supabaseUrl.includes('placeholder') || 
+        supabaseKey.includes('placeholder') ||
+        supabaseUrl === 'your-project-url' || 
+        supabaseKey === 'your-anon-key') {
       // Authentication is disabled - allow access
       setAuthDisabled(true);
       setLoading(false);
