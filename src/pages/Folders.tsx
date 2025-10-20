@@ -7,7 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { Folder, Plus, FileText, Download, Trash2, Edit, MoreVertical } from "lucide-react";
+import { Folder, Plus, FileText, Download, Trash2, Edit, MoreVertical, Eye } from "lucide-react";
 import { Textarea } from "@/components/ui/textarea";
 import { getJSON, postJSON, patchJSON, deleteRequest } from "@/lib/api";
 import type { Folder as FolderType, FolderCreate, FolderUpdate } from "@/types/folder";
@@ -34,10 +34,18 @@ export default function Folders() {
   const [parentFolderId, setParentFolderId] = useState<number | undefined>();
   const [editingFolder, setEditingFolder] = useState<FolderType | null>(null);
   const [showEditDialog, setShowEditDialog] = useState(false);
+  const [viewingFolder, setViewingFolder] = useState<FolderType | null>(null);
+  const [showViewDialog, setShowViewDialog] = useState(false);
 
   const { data: folders = [], isLoading } = useQuery({
     queryKey: ["folders"],
     queryFn: () => getJSON<FolderType[]>("/folders"),
+  });
+
+  const { data: folderDocuments } = useQuery({
+    queryKey: ["folder-documents", viewingFolder?.id],
+    queryFn: () => getJSON<{ ocr_jobs: any[]; word_documents: any[] }>(`/folders/${viewingFolder?.id}/documents`),
+    enabled: Boolean(viewingFolder?.id),
   });
 
   const createFolderMutation = useMutation({
@@ -286,6 +294,18 @@ export default function Folders() {
                             size="sm"
                             className="w-full justify-start"
                             onClick={() => {
+                              setViewingFolder(folder);
+                              setShowViewDialog(true);
+                            }}
+                          >
+                            <Eye className="h-4 w-4 mr-2" />
+                            Vezi conținut
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="w-full justify-start"
+                            onClick={() => {
                               setEditingFolder(folder);
                               setShowEditDialog(true);
                             }}
@@ -322,6 +342,92 @@ export default function Folders() {
           </div>
         )}
       </div>
+
+      {/* View Folder Documents Dialog */}
+      <Dialog open={showViewDialog} onOpenChange={setShowViewDialog}>
+        <DialogContent className="sm:max-w-[700px] bg-card max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Conținutul folderului: {viewingFolder?.name}</DialogTitle>
+          </DialogHeader>
+          {viewingFolder && (
+            <div className="space-y-4 py-4">
+              <div>
+                <h3 className="text-sm font-medium mb-2">OCR Jobs ({folderDocuments?.ocr_jobs.length || 0})</h3>
+                {folderDocuments?.ocr_jobs && folderDocuments.ocr_jobs.length > 0 ? (
+                  <div className="space-y-2">
+                    {folderDocuments.ocr_jobs.map((job: any) => (
+                      <div
+                        key={job.id}
+                        className="flex items-center justify-between p-3 rounded-lg bg-muted/50 hover:bg-muted transition-colors"
+                      >
+                        <div className="flex items-center gap-3 flex-1 min-w-0">
+                          <FileText className="h-4 w-4 text-primary flex-shrink-0" />
+                          <div className="min-w-0 flex-1">
+                            <p className="text-sm font-medium truncate">{job.original_filename}</p>
+                            <p className="text-xs text-muted-foreground">
+                              {new Date(job.created_at).toLocaleDateString()} · {job.engine}
+                            </p>
+                          </div>
+                        </div>
+                        {job.download_url && (
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => window.open(job.download_url, "_blank")}
+                          >
+                            <Download className="h-4 w-4" />
+                          </Button>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-sm text-muted-foreground py-4 text-center">
+                    Nu există documente OCR în acest folder.
+                  </p>
+                )}
+              </div>
+
+              <div>
+                <h3 className="text-sm font-medium mb-2">
+                  Documente Word ({folderDocuments?.word_documents.length || 0})
+                </h3>
+                {folderDocuments?.word_documents && folderDocuments.word_documents.length > 0 ? (
+                  <div className="space-y-2">
+                    {folderDocuments.word_documents.map((doc: any) => (
+                      <div
+                        key={doc.id}
+                        className="flex items-center justify-between p-3 rounded-lg bg-muted/50 hover:bg-muted transition-colors"
+                      >
+                        <div className="flex items-center gap-3 flex-1 min-w-0">
+                          <FileText className="h-4 w-4 text-primary flex-shrink-0" />
+                          <div className="min-w-0 flex-1">
+                            <p className="text-sm font-medium truncate">{doc.title}</p>
+                            <p className="text-xs text-muted-foreground">
+                              {new Date(doc.created_at).toLocaleDateString()}
+                            </p>
+                          </div>
+                        </div>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => window.open(doc.download_url, "_blank")}
+                        >
+                          <Download className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-sm text-muted-foreground py-4 text-center">
+                    Nu există documente Word în acest folder.
+                  </p>
+                )}
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
 
       {/* Edit Folder Dialog */}
       <Dialog open={showEditDialog} onOpenChange={setShowEditDialog}>
