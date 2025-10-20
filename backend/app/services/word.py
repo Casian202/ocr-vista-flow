@@ -44,6 +44,7 @@ def serialize_word_document(document: WordDocument, prefix: str) -> WordDocument
         summary=document.summary,
         created_at=document.created_at,
         download_url=f"{prefix}/word/documents/{document.id}/download",
+        folder_id=document.folder_id,
     )
 
 

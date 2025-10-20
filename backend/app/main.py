@@ -18,6 +18,8 @@ from .config import get_settings
 from .database import get_session, init_db
 from .models import OCRJob
 from .schemas import (
+    FolderCreate,
+    FolderUpdate,
     OCRJobDetail,
     OCRJobUpdate,
     SettingResponse,
@@ -41,6 +43,15 @@ from .services.word import (
     get_document,
     list_documents,
     serialize_word_document,
+)
+from .services.folder import (
+    create_folder as create_folder_service,
+    create_folder_zip,
+    delete_folder as delete_folder_service,
+    get_folder,
+    list_folders,
+    serialize_folder,
+    update_folder as update_folder_service,
 )
 
 logger = logging.getLogger(__name__)
@@ -222,6 +233,8 @@ def update_job(job_id: int) -> Any:
             abort(json_response({"detail": "Job inexistent"}, 404))
         if data.folder is not None:
             job.folder = data.folder if data.folder.lower() != "default" else None
+        if data.folder_id is not None:
+            job.folder_id = data.folder_id
         session.add(job)
         session.commit()
         session.refresh(job)
@@ -343,6 +356,87 @@ def download_word_document(document_id: int):
         mimetype=document.mime_type,
         as_attachment=True,
         download_name=document.file_name,
+    )
+
+
+@route("/folders", methods=["GET"])
+def list_folders_route():
+    with get_session() as session:
+        folders = list_folders(session)
+        serialized = [serialize_folder(session, folder).model_dump() for folder in folders]
+    return json_response(serialized)
+
+
+@route("/folders", methods=["POST"])
+def create_folder_route():
+    payload = request.get_json(silent=True) or {}
+    data = parse_model(FolderCreate, payload)
+    with get_session() as session:
+        folder = create_folder_service(
+            session,
+            name=data.name,
+            description=data.description,
+            color=data.color,
+            parent_id=data.parent_id,
+        )
+        response = serialize_folder(session, folder)
+    return json_response(response.model_dump(), 201)
+
+
+@route("/folders/<int:folder_id>", methods=["GET"])
+def get_folder_route(folder_id: int):
+    with get_session() as session:
+        folder = get_folder(session, folder_id)
+        if not folder:
+            abort(json_response({"detail": "Folder inexistent"}, 404))
+        response = serialize_folder(session, folder)
+    return json_response(response.model_dump())
+
+
+@route("/folders/<int:folder_id>", methods=["PATCH"])
+def update_folder_route(folder_id: int):
+    payload = request.get_json(silent=True) or {}
+    data = parse_model(FolderUpdate, payload)
+    with get_session() as session:
+        folder = update_folder_service(
+            session,
+            folder_id,
+            name=data.name,
+            description=data.description,
+            color=data.color,
+            parent_id=data.parent_id,
+        )
+        if not folder:
+            abort(json_response({"detail": "Folder inexistent"}, 404))
+        response = serialize_folder(session, folder)
+    return json_response(response.model_dump())
+
+
+@route("/folders/<int:folder_id>", methods=["DELETE"])
+def delete_folder_route(folder_id: int):
+    with get_session() as session:
+        success = delete_folder_service(session, folder_id)
+        if not success:
+            abort(json_response({"detail": "Folder inexistent"}, 404))
+    return ("", 204)
+
+
+@route("/folders/<int:folder_id>/download", methods=["GET"])
+def download_folder_route(folder_id: int):
+    with get_session() as session:
+        folder = get_folder(session, folder_id)
+        if not folder:
+            abort(json_response({"detail": "Folder inexistent"}, 404))
+        
+        zip_buffer = create_folder_zip(session, folder_id)
+        if not zip_buffer:
+            abort(json_response({"detail": "Nu s-a putut crea arhiva"}, 500))
+    
+    return send_file(
+        zip_buffer,
+        mimetype="application/zip",
+        as_attachment=True,
+        download_name=f"{folder.name}.zip",
     )
 
 

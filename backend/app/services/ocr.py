@@ -61,6 +61,7 @@ def serialize_job(job: OCRJob, prefix: str) -> OCRJobRead:
         auto_detect=job.auto_detect,
         language=job.language,
         folder=job.folder,
+        folder_id=job.folder_id,
         status=job.status,
         progress=job.progress,
         error=job.error,

@@ -23,7 +23,8 @@ class OCRJob(TimestampMixin, table=True):
     engine: str
     auto_detect: bool = True
     language: Optional[str] = None
-    folder: Optional[str] = None
+    folder: Optional[str] = None  # Legacy string-based folder (kept for compatibility)
+    folder_id: Optional[int] = Field(default=None, foreign_key="folder.id")
     status: str = Field(default="queued")
     progress: int = Field(default=0)
     error: Optional[str] = None
@@ -43,3 +44,12 @@ class WordDocument(TimestampMixin, table=True):
     mime_type: str = Field(default="application/vnd.openxmlformats-officedocument.wordprocessingml.document")
     summary: Optional[str] = None
     job_id: Optional[int] = Field(default=None, foreign_key="ocrjob.id")
+    folder_id: Optional[int] = Field(default=None, foreign_key="folder.id")
+
+
+class Folder(TimestampMixin, table=True):
+    id: Optional[int] = Field(default=None, primary_key=True)
+    name: str = Field(index=True)
+    description: Optional[str] = None
+    color: str = Field(default="green")
+    parent_id: Optional[int] = Field(default=None, foreign_key="folder.id")
