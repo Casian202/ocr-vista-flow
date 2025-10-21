@@ -1,4 +1,19 @@
 #!/usr/bin/env bash
+#
+# OCR Vista Flow Startup Script
+# 
+# This script automatically starts both the frontend and backend servers
+# without requiring Docker. It will:
+# - Check for required dependencies (Python 3, Node.js, npm)
+# - Setup Python virtual environment if needed
+# - Install npm dependencies if needed
+# - Start the Flask backend server on port 8000
+# - Start the Vite frontend server on port 8080
+# - Gracefully shutdown both services when you press Ctrl+C
+#
+# Usage: ./start.sh
+#
+
 set -euo pipefail
 
 # Colors for output
