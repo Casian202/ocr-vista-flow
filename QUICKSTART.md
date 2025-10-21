@@ -1,10 +1,11 @@
 # Quick Start Guide - OCR Vista Flow
 
-Get OCR Vista Flow running in under 5 minutes with Docker!
+Get OCR Vista Flow running in under 5 minutes!
 
 ## Prerequisites
 
-- Docker and Docker Compose installed on your system
+- Python 3.8+ (with `python3` and `pip` installed)
+- Node.js 16+ (with `npm` installed)
 - At least 2GB of free disk space
 
 ## Quick Start
@@ -15,14 +16,21 @@ Get OCR Vista Flow running in under 5 minutes with Docker!
    cd ocr-vista-flow
    ```
 
-2. **Start the application:**
+2. **Start the application with the automated script:**
    ```bash
-   docker compose up -d
+   ./start.sh
    ```
+   
+   The script will automatically:
+   - Check for required dependencies (Python, Node.js, npm)
+   - Set up the Python virtual environment for the backend
+   - Install all frontend dependencies
+   - Start the backend server on http://localhost:8000
+   - Start the frontend development server on http://localhost:8080
 
 3. **Access the application:**
    
-   Open your browser and navigate to: **http://localhost**
+   Open your browser and navigate to: **http://localhost:8080**
 
 4. **Start processing documents:**
    - Click on "OCR Studio" in the sidebar
@@ -30,53 +38,75 @@ Get OCR Vista Flow running in under 5 minutes with Docker!
    - Select language (or use auto-detect)
    - Click "Pornește OCR" to start processing
 
+5. **Stop the application:**
+   
+   Press **Ctrl+C** in the terminal where start.sh is running
+
 That's it! 🎉
+
+## Alternative: Using Docker
+
+If you prefer Docker:
+
+```bash
+docker compose up -d
+```
+
+Then access the application at **http://localhost**
 
 ## What Happens During Startup
 
-When you run `docker compose up -d`, Docker will:
+When you run `./start.sh`, the script will:
 
-1. Build the backend container with:
-   - Python 3.11
-   - OCR engines (OCRmyPDF, Docling)
-   - Tesseract OCR
-   - All required dependencies
+1. **Check Prerequisites:**
+   - Verify Python 3 is installed
+   - Verify Node.js and npm are installed
 
-2. Build the frontend container with:
-   - React + TypeScript application
-   - Nginx web server
+2. **Setup Backend:**
+   - Create a Python virtual environment (.venv) if it doesn't exist
+   - Install all Python dependencies (Flask, OCRmyPDF, Docling, etc.)
+   - Copy .env.example to backend/.env if needed
 
-3. Create a persistent volume for:
-   - SQLite database
-   - Processed documents
-   - OCR outputs
+3. **Setup Frontend:**
+   - Install all npm dependencies if node_modules doesn't exist
+   - Copy .env.example to .env if needed
+
+4. **Start Services:**
+   - Launch the Flask backend server on port 8000
+   - Launch the Vite development server on port 8080
+   - Configure automatic proxy from frontend to backend for /api requests
+
+5. **Manage Process:**
+   - Keep both services running
+   - Gracefully stop both services when you press Ctrl+C
 
 ## Accessing Services
 
-- **Web Interface:** http://localhost (port 80)
-- **Backend API:** http://localhost:8000 (direct access for debugging)
+- **Web Interface:** http://localhost:8080 (Vite dev server)
+- **Backend API:** http://localhost:8000 (Flask server)
 - **Health Check:** http://localhost:8000/api/health
 
 ## Managing the Application
 
-### View logs:
-```bash
-docker compose logs -f
-```
-
 ### Stop the application:
+Press **Ctrl+C** in the terminal where `start.sh` is running. This will gracefully stop both backend and frontend services.
+
+### Restart the application:
+Simply run `./start.sh` again.
+
+### Manual startup (without start.sh):
+
+If you prefer to start services manually:
+
+**Backend:**
 ```bash
-docker compose down
+source .venv/bin/activate
+python -m backend.app.main
 ```
 
-### Stop and remove all data:
+**Frontend (in a new terminal):**
 ```bash
-docker compose down -v
-```
-
-### Rebuild after code changes:
-```bash
-docker compose up -d --build
+npm run dev
 ```
 
 ## Optional Configuration

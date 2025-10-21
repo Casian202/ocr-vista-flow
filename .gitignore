@@ -34,3 +34,4 @@ venv/
 ENV/
 env/
 docker-compose.override.yml
+*.env
