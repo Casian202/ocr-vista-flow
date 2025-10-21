@@ -126,9 +126,23 @@ către backend prin `/api`.
    Scriptul acceptă opțiuni pentru numărul de workeri, adresa de bind, utilizator
    și locația fișierului `.env` (vezi `--help`).
 
-5. **Actualizează Nginx** cu `deploy/nginx.conf`. Acesta servește fișierele
+5. **Configurează certificatul SSL pentru HTTPS** (opțional, dar recomandat pentru producție):
+
+   ```bash
+   # Instalează certbot pentru Let's Encrypt
+   sudo apt-get install certbot python3-certbot-nginx
+   
+   # Obține certificat SSL pentru domeniul tău
+   sudo certbot certonly --nginx -d ocr.casianhome.org
+   ```
+
+   Certificatele vor fi salvate în `/etc/letsencrypt/live/ocr.casianhome.org/`.
+   Configurația Nginx este deja pregătită să folosească aceste certificate.
+
+6. **Actualizează Nginx** cu `deploy/nginx.conf`. Acesta servește fișierele
    statice din `/var/www/ocr-vista-flow/current` și face proxy către backend-ul
-   care rulează pe `127.0.0.1:8000`:
+   care rulează pe `127.0.0.1:8000`. Configurația include suport HTTPS și
+   redirect automat de la HTTP la HTTPS:
 
    ```bash
    sudo cp deploy/nginx.conf /etc/nginx/sites-available/ocr-vista-flow.conf
@@ -138,7 +152,11 @@ către backend prin `/api`.
    sudo systemctl reload nginx
    ```
 
-6. **Actualizează aplicația** rulând din nou pașii de build pentru frontend și
+   **Notă:** Dacă nu ai certificat SSL, configurația va eșua la reload. În acest caz,
+   poți comenta temporar liniile SSL din `deploy/nginx.conf` și porți 443, apoi
+   reveni la configurația HTTPS după obținerea certificatului.
+
+7. **Actualizează aplicația** rulând din nou pașii de build pentru frontend și
    repornind serviciul Gunicorn după fiecare upgrade al backend-ului:
 
    ```bash
